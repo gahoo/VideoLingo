@@ -2,24 +2,15 @@ import os,sys
 import glob
 import re
 import subprocess
+from functools import partial
 from core.utils import *
 
 def sanitize_filename(filename):
-    # Remove or replace illegal characters
     filename = re.sub(r'[<>:"/\\|?*]', '', filename)
-    # Ensure filename doesn't start or end with a dot or space
     filename = filename.strip('. ')
-    # Use default name if filename is empty
-    return filename if filename else 'video'
+    return filename if filename else 'media'
 
 def update_ytdlp():
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"])
-        if 'yt_dlp' in sys.modules:
-            del sys.modules['yt_dlp']
-        rprint("[green]yt-dlp updated[/green]")
-    except subprocess.CalledProcessError as e:
-        rprint("[yellow]Warning: Failed to update yt-dlp: {e}[/yellow]")
     from yt_dlp import YoutubeDL
     return YoutubeDL
 
@@ -28,22 +19,20 @@ def download_video_ytdlp(url, save_path='output', resolution='1080'):
     ydl_opts = {
         'format': 'bestvideo+bestaudio/best' if resolution == 'best' else f'bestvideo[height<={resolution}]+bestaudio/best[height<={resolution}]',
         'outtmpl': f'{save_path}/%(title)s.%(ext)s',
+        'proxy': load_key("proxy.http"),
         'noplaylist': True,
         'writethumbnail': True,
         'postprocessors': [{'key': 'FFmpegThumbnailsConvertor', 'format': 'jpg'}],
     }
 
-    # Read Youtube Cookie File
     cookies_path = load_key("youtube.cookies_path")
     if os.path.exists(cookies_path):
         ydl_opts["cookiefile"] = str(cookies_path)
 
-    # Get YoutubeDL class after updating
     YoutubeDL = update_ytdlp()
     with YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
     
-    # Check and rename files after download
     for file in os.listdir(save_path):
         if os.path.isfile(os.path.join(save_path, file)):
             filename, ext = os.path.splitext(file)
@@ -51,18 +40,50 @@ def download_video_ytdlp(url, save_path='output', resolution='1080'):
             if new_filename != filename:
                 os.rename(os.path.join(save_path, file), os.path.join(save_path, new_filename + ext))
 
-def find_video_files(save_path='output'):
-    video_files = [file for file in glob.glob(save_path + "/*") if os.path.splitext(file)[1][1:].lower() in load_key("allowed_video_formats")]
-    # change \\ to /, this happen on windows
+def find_media_file(media_type=None, save_path='output'):
+    """
+    Finds the single source media file in the specified path, intelligently ignoring
+    intermediate outputs. If media_type is specified ('video' or 'audio'), it
+    will only search for that type. Otherwise, it will search for any media.
+    Returns a single file path string.
+    """
+    video_formats = load_key("allowed_video_formats")
+    audio_formats = load_key("allowed_audio_formats")
+    
+    formats_to_check = []
+    if media_type == 'video':
+        formats_to_check = video_formats
+    elif media_type == 'audio':
+        formats_to_check = audio_formats
+    elif media_type is None:
+        formats_to_check = video_formats + audio_formats
+    else:
+        raise ValueError("Invalid media_type specified. Must be 'video', 'audio', or None.")
+
+    all_files_in_path = glob.glob(os.path.join(save_path, "*"))
+    
+    # Filter for the correct media type(s)
+    candidates = [f for f in all_files_in_path if os.path.splitext(f)[1][1:].lower() in formats_to_check]
+    
+    # The original, robust filtering logic: ignore known intermediate files.
+    source_candidates = [f for f in candidates if not os.path.basename(f).startswith("output_")]
+
     if sys.platform.startswith('win'):
-        video_files = [file.replace("\\", "/") for file in video_files]
-    video_files = [file for file in video_files if not file.startswith("output/output")]
-    if len(video_files) != 1:
-        raise ValueError(f"Number of videos found {len(video_files)} is not unique. Please check.")
-    return video_files[0]
+        source_candidates = [f.replace("\\", "/") for f in source_candidates]
+
+    if len(source_candidates) == 0:
+        type_str = media_type if media_type else "media"
+        raise ValueError(f"No source {type_str} files found in '{save_path}' after filtering.")
+    if len(source_candidates) > 1:
+        type_str = media_type if media_type else "media"
+        raise ValueError(f"Multiple source {type_str} files found after filtering: {source_candidates}. Please ensure only one original media file exists.")
+    
+    return source_candidates[0]
+
+# Alias for backward compatibility.
+find_video_files = partial(find_media_file, media_type="video")
 
 if __name__ == '__main__':
-    # Example usage
     url = input('Please enter the URL of the video you want to download: ')
     resolution = input('Please enter the desired resolution (360/480/720/1080, default 1080): ')
     resolution = int(resolution) if resolution.isdigit() else 1080
