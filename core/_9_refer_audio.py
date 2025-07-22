@@ -18,10 +18,41 @@ def time_to_samples(time_str, sr):
     return int(seconds * sr)
 
 def extract_audio(audio_data, sr, start_time, end_time, out_file):
-    """Simplified audio extraction function"""
-    start = time_to_samples(start_time, sr)
-    end = time_to_samples(end_time, sr)
-    sf.write(out_file, audio_data[start:end], sr)
+    """Extracts an audio segment, ensuring it is at least 3 seconds long."""
+    min_duration_seconds = 3
+    min_duration_samples = int(min_duration_seconds * sr)
+
+    # Get initial start and end samples
+    start_samples = time_to_samples(start_time, sr)
+    end_samples = time_to_samples(end_time, sr)
+
+    duration_samples = end_samples - start_samples
+
+    # If the audio is shorter than the minimum duration, extend it
+    if duration_samples < min_duration_samples:
+        shortfall = min_duration_samples - duration_samples
+        # Extend symmetrically from both ends
+        half_extension = shortfall // 2
+        
+        extended_start = start_samples - half_extension
+        extended_end = end_samples + half_extension + (shortfall % 2) # Add remainder to one side
+
+        # Boundary checks to ensure we don't go out of the audio's limits
+        final_start = max(0, extended_start)
+        final_end = min(len(audio_data), extended_end)
+
+        # If we were clipped at the start, try to compensate by extending more at the end
+        if extended_start < 0:
+            final_end = min(len(audio_data), final_end - extended_start) # extended_start is negative
+        
+        # If we were clipped at the end, try to compensate by extending more at the start
+        if extended_end > len(audio_data):
+            final_start = max(0, final_start - (extended_end - len(audio_data)))
+    else:
+        final_start = start_samples
+        final_end = end_samples
+
+    sf.write(out_file, audio_data[final_start:final_end], sr)
 
 def extract_refer_audio_main():
     demucs_audio() #!!! in case demucs not run
