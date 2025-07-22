@@ -1,5 +1,5 @@
-ARG CUDA_VERSION=12.4.1
-FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
+ARG CUDA_VERSION=12.6.2
+FROM nvcr.dockerhub-cf.42bio.info/nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -30,7 +30,7 @@ WORKDIR /app
 RUN git clone https://github.com/Huanshere/VideoLingo.git .
 
 # Install PyTorch and torchaudio
-RUN pip install torch==2.0.0 torchaudio==2.0.0 --index-url https://download.pytorch.org/whl/cu118
+RUN pip install torch==2.0.0 torchaudio==2.0.0 --index-url https://download.pytorch.org/whl/cu118/
 
 # Clean up unnecessary files
 RUN rm -rf .git
@@ -41,6 +41,13 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 # Install dependencies
 COPY requirements.txt .
 RUN pip install -e .
+
+RUN pip install http://download-o.42bio.info/tmp/en_core_web_md-3.7.1-py3-none-any.whl
+
+RUN apt update && apt install -y fonts-noto-cjk fonts-wqy-zenhei && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN pip uninstall -y typer fastapi && pip install typer==0.9.0 "fastapi[all]==0.110.3"
 
 # Set CUDA-related environment variables
 ENV CUDA_HOME=/usr/local/cuda
