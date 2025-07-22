@@ -1,14 +1,20 @@
 from core.utils import *
 from core.asr_backend.demucs_vl import demucs_audio
 from core.asr_backend.audio_preprocess import process_transcription, convert_video_to_audio, split_audio, save_results, normalize_audio_volume
-from core._1_ytdlp import find_video_files
+from core._1_ytdlp import find_media_file
 from core.utils.models import *
 
 @check_file_exists(_2_CLEANED_CHUNKS)
 def transcribe():
-    # 1. video to audio
-    video_file = find_video_files()
-    convert_video_to_audio(video_file)
+    # 1. At this early stage, there's only one media file in the 'output' directory.
+    # We call find_media_file without arguments to find it, regardless of type.
+    rprint("[cyan]🔍 Finding unique source media file...[/cyan]")
+    media_path = find_media_file()
+    
+    # 2. Standardize the media to the raw audio file for ASR.
+    # This function handles both video (extracts audio) and audio (standardizes format).
+    rprint(f"[cyan]🎧 Standardizing '{media_path}' for ASR...[/cyan]")
+    convert_video_to_audio(media_path)
 
     # 2. Demucs vocal separation:
     if load_key("demucs"):
