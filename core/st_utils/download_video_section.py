@@ -31,6 +31,7 @@ def download_video_section():
             with col2:
                 res_dict = {
                     "360p": "360",
+                    "720p": "720",
                     "1080p": "1080",
                     "Best": "best"
                 }
