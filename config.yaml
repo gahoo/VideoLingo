@@ -31,7 +31,12 @@ whisper:
   language: 'en'
   detected_language: 'en'
   # Whisper running mode ["local", "cloud", "elevenlabs"]. Specifies where to run, cloud uses 302.ai API
-  runtime: 'local'
+  runtime: 'fastapi'
+  # URL for your WhisperX FastAPI server
+  whisperx_fastapi_url: 'http://localhost:9000'
+  batch_size: 32
+  chunk_size: 3
+  diarization: false
   # 302.ai API key
   whisperX_302_api_key: 'your_302_api_key'
   # ElevenLabs API key (experimental)

@@ -35,6 +35,9 @@ def transcribe():
     elif runtime == "cloud":
         from core.asr_backend.whisperX_302 import transcribe_audio_302 as ts
         rprint("[cyan]🎤 Transcribing audio with 302 API...[/cyan]")
+    elif runtime == "fastapi":
+        from core.asr_backend.whisperX_FastAPI import transcribe_audio_fastapi as ts
+        rprint("[cyan]🎤 Transcribing audio with whisperX FastAPI...[/cyan]")
     elif runtime == "elevenlabs":
         from core.asr_backend.elevenlabs_asr import transcribe_audio_elevenlabs as ts
         rprint("[cyan]🎤 Transcribing audio with ElevenLabs API...[/cyan]")
