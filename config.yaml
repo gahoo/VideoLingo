@@ -21,8 +21,13 @@ max_workers: 4
 # Language settings, written into the prompt, can be described in natural language
 target_language: '简体中文'
 
-# Whether to use Demucs for vocal separation before transcription
-demucs: true
+# Vocal separation method ["demucs", "uvr", "none"]
+vocal_separation:
+  method: 'uvr'
+  # UVR settings, only used if method is "uvr"
+  uvr:
+    url: 'http://localhost:7000' # URL for your UVR API server
+    model: 'model_bs_roformer_ep_317_sdr_12.9755.ckpt' # Default model for UVR
 
 whisper:
   # ["large-v3", "large-v3-turbo"]. Note: for zh model will force to use Belle/large-v3
@@ -120,7 +125,7 @@ edge_tts:
 gpt_sovits:
   # If base_url is provided, the system will make requests directly to this URL.
   # If left empty, the system will attempt to start the GPT-SoVITS server locally.
-  base_url: ''
+  base_url: 'http://localhost:9880'
   character: 'Huanyuv2'
   refer_mode: 3
 
