@@ -24,7 +24,7 @@ def check_lang(text_lang, prompt_lang):
     return text_lang, prompt_lang
 
 
-def gpt_sovits_tts(text, text_lang, save_path, ref_audio_path, prompt_lang, prompt_text):
+def gpt_sovits_tts(text, text_lang, save_path, ref_audio_path, prompt_lang, prompt_text, base_url='http://127.0.0.1:9880'):
     text_lang, prompt_lang = check_lang(text_lang, prompt_lang)
 
     current_dir = Path.cwd()
@@ -46,7 +46,7 @@ def gpt_sovits_tts(text, text_lang, save_path, ref_audio_path, prompt_lang, prom
             rprint(f"[bold green]Audio saved successfully:[/bold green] {full_save_path}")
         return True
 
-    response = requests.post('http://127.0.0.1:9880/tts', json=payload)
+    response = requests.post(f'{base_url}/tts', json=payload)
     if response.status_code == 200:
         return save_audio(response, save_path, current_dir)
     else:
@@ -54,12 +54,16 @@ def gpt_sovits_tts(text, text_lang, save_path, ref_audio_path, prompt_lang, prom
         return False
 
 def gpt_sovits_tts_for_videolingo(text, save_as, number, task_df):
-    start_gpt_sovits_server()
     TARGET_LANGUAGE = load_key("target_language")
     WHISPER_LANGUAGE = load_key("whisper.language")
     sovits_set = load_key("gpt_sovits")
     DUBBING_CHARACTER = sovits_set["character"]
     REFER_MODE = sovits_set["refer_mode"]
+    sovits_base_url = sovits_set.get("base_url")
+
+    if not sovits_base_url:
+        start_gpt_sovits_server()
+        sovits_base_url = 'http://127.0.0.1:9880'
 
     current_dir = Path.cwd()
     prompt_lang = load_key("whisper.detected_language") if WHISPER_LANGUAGE == 'auto' else WHISPER_LANGUAGE
@@ -99,11 +103,11 @@ def gpt_sovits_tts_for_videolingo(text, save_as, number, task_df):
     else:
         raise ValueError("Invalid REFER_MODE. Choose 1, 2, or 3.")
 
-    success = gpt_sovits_tts(text, TARGET_LANGUAGE, save_as, ref_audio_path, prompt_lang, prompt_text)
+    success = gpt_sovits_tts(text, TARGET_LANGUAGE, save_as, ref_audio_path, prompt_lang, prompt_text, sovits_base_url)
     if not success and REFER_MODE == 3:
         rprint(f"[bold red]TTS request failed, switching back to mode 2 and retrying[/bold red]")
         ref_audio_path = current_dir / "output/audio/refers/1.wav"
-        gpt_sovits_tts(text, TARGET_LANGUAGE, save_as, ref_audio_path, prompt_lang, prompt_text)
+        gpt_sovits_tts(text, TARGET_LANGUAGE, save_as, ref_audio_path, prompt_lang, prompt_text, sovits_base_url)
 
 
 def find_and_check_config_path(dubbing_character):

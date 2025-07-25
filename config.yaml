@@ -118,6 +118,9 @@ edge_tts:
 
 # SoVITS configuration
 gpt_sovits:
+  # If base_url is provided, the system will make requests directly to this URL.
+  # If left empty, the system will attempt to start the GPT-SoVITS server locally.
+  base_url: ''
   character: 'Huanyuv2'
   refer_mode: 3
 
