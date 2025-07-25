@@ -37,7 +37,10 @@ def check_hf_mirror():
 
 @except_handler("WhisperX processing error:")
 def transcribe_audio(raw_audio_file, vocal_audio_file, start, end):
-    os.environ['HF_ENDPOINT'] = check_hf_mirror()
+    if not (os.environ.get('HF_ENDPOINT') or
+            os.environ.get('TRANSFORMERS_OFFLINE') or
+            os.environ.get('HF_DATASETS_OFFLINE')):
+        os.environ['HF_ENDPOINT'] = check_hf_mirror()
     WHISPER_LANGUAGE = load_key("whisper.language")
     device = "cuda" if torch.cuda.is_available() else "cpu"
     rprint(f"🚀 Starting WhisperX using device: {device} ...")
