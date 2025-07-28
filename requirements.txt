@@ -30,4 +30,5 @@ syllables
 pypinyin
 g2p-en
 xmltodict
+xinference-client
 
