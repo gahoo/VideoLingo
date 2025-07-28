@@ -21,27 +21,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 TASKS_DIR = Path("tasks").resolve()
 TASKS_DIR.mkdir(exist_ok=True)
 
-# --- Mock Core Imports ---
-try:
-    from core.utils.onekeycleanup import cleanup
-    from core import (
-        _1_ytdlp, _2_asr, _3_1_split_nlp, _3_2_split_meaning,
-        _4_1_summarize, _4_2_translate, _5_split_sub, _6_gen_sub,
-        _7_sub_into_vid, _8_1_audio_task, _8_2_dub_chunks, _9_refer_audio,
-        _10_gen_audio, _11_merge_audio, _12_dub_to_vid
-    )
-except ImportError:
-    logging.warning("Could not import core modules. Using mock functions.")
-    class MockCoreModule:
-        def __getattr__(self, name):
-            def mock_func(*args, **kwargs):
-                logging.info(f"Mock call to {self.__class__.__name__}.{name}")
-                if name == 'find_video_files': return 'mock_video.mp4'
-            return mock_func
-    _1_ytdlp, _2_asr, _3_1_split_nlp, _3_2_split_meaning, _4_1_summarize, _4_2_translate, \
-    _5_split_sub, _6_gen_sub, _7_sub_into_vid, _8_1_audio_task, _8_2_dub_chunks, _9_refer_audio, \
-    _10_gen_audio, _11_merge_audio, _12_dub_to_vid = [MockCoreModule() for _ in range(15)]
-    def cleanup(save_dir=None): pass
+from core.utils.onekeycleanup import cleanup
+from core import (
+    _1_ytdlp, _2_asr, _3_1_split_nlp, _3_2_split_meaning,
+    _4_1_summarize, _4_2_translate, _5_split_sub, _6_gen_sub,
+    _7_sub_into_vid, _8_1_audio_task, _8_2_dub_chunks, _9_refer_audio,
+    _10_gen_audio, _11_merge_audio, _12_dub_to_vid
+)
 
 # --- Pydantic Models ---
 class ProcessOptions(BaseModel):
